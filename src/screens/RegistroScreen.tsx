@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, ImageBackground, StyleSheet } from 'react-native';
 import { Button, Snackbar, Text, TextInput } from 'react-native-paper';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig';
+import { auth, dbRealTime } from '../config/firebaseConfig'; 
+import { ref, set } from 'firebase/database'; 
 import { CommonActions, useNavigation } from '@react-navigation/native';
 
 interface FormRegister {
@@ -22,18 +23,18 @@ interface showMessage {
 
 export const RegistroScreen = () => {
   const [formRegister, setFormRegister] = useState<FormRegister>({
-    username: "",
-    firstName: "",
-    lastName: "",
-    age: "",
-    email: "",
-    password: "",
+    username: '',
+    firstName: '',
+    lastName: '',
+    age: '',
+    email: '',
+    password: '',
   });
 
   const [showMessage, setShowMessage] = useState<showMessage>({
     visible: false,
-    message: "",
-    color: "#fff",
+    message: '',
+    color: '#fff',
   });
 
   const [hiddenPassword, setHiddenPassword] = useState<boolean>(true);
@@ -56,12 +57,23 @@ export const RegistroScreen = () => {
     }
 
     try {
-      const response = await createUserWithEmailAndPassword(auth, formRegister.email, formRegister.password);
+      const response = await createUserWithEmailAndPassword(auth, email, password);
+
+      const userId = response.user.uid; 
+      await set(ref(dbRealTime, 'users/' + userId), {
+        username: username,
+        firstName: firstName,
+        lastName: lastName,
+        age: age,
+        email: email,
+      });
+
       setShowMessage({
         visible: true,
         message: 'Registro Exitoso!',
         color: '#085f06',
       });
+
     } catch (e) {
       console.log(e);
       setShowMessage({
