@@ -8,9 +8,11 @@ interface Props {
   publicationDate: string;
   publisher: string;
   genre: string;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-export const LibroCard = ({ name, author, publicationDate, publisher, genre }: Props) => {
+export const LibroCard = ({ name, author, publicationDate, publisher, genre, onEdit, onDelete }: Props) => {
   return (
     <View style={styles.rootListProduct}>
       <View>
@@ -22,10 +24,14 @@ export const LibroCard = ({ name, author, publicationDate, publisher, genre }: P
       </View>
       <View style={styles.iconHeader}>
         <IconButton
-          icon="arrow-right-bold-outline"
+          icon="pencil"
           size={25}
-          mode='contained'
-          onPress={() => console.log('Pressed')}
+          onPress={onEdit}
+        />
+        <IconButton
+          icon="delete"
+          size={25}
+          onPress={onDelete}
         />
       </View>
     </View>
@@ -43,6 +49,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   iconHeader: {
-    marginLeft: 10,
+    flexDirection: 'row',
   },
 });

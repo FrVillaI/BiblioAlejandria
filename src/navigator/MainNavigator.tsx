@@ -7,20 +7,30 @@ import { auth } from '../config/firebaseConfig';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegistroScreen } from '../screens/RegistroScreen';
+import { EditarLibro } from '../screens/components/EditarLibros';
 
 interface Routes {
   name: string;
   screen: () => JSX.Element;
+  title: string; // Agregamos una propiedad para el título
 }
 
 const routesNoAuth: Routes[] = [
-  { name: 'Login', screen: LoginScreen },
-  { name: 'Register', screen: RegistroScreen }
+  { name: 'Login', screen: LoginScreen, title: 'Iniciar Sesión' },
+  { name: 'Register', screen: RegistroScreen, title: 'Registro' }
 ];
 
 const routesAuth: Routes[] = [
-  { name: 'Home', screen: HomeScreen }
+  { name: 'Home', screen: HomeScreen, title: 'Biblioteca' },
+  { name: 'EditarLibro', screen: EditarLibro, title: 'Editar Libro' }
 ];
+
+export type RootStackParamList = {
+  Home: undefined;
+  Login: undefined;
+  Register: undefined;
+  EditarLibro: { bookId: string }; 
+};
 
 const Stack = createStackNavigator();
 
@@ -52,8 +62,8 @@ export const MainNavigator = () => {
           <Stack.Screen
             key={index}
             name={item.name}
-            options={{ headerShown: false }}
             component={item.screen}
+            options={{ title: item.title }} 
           />
         ))
       ) : (
@@ -61,8 +71,8 @@ export const MainNavigator = () => {
           <Stack.Screen
             key={index}
             name={item.name}
-            options={{ headerShown: false }}
             component={item.screen}
+            options={{ title: item.title }} 
           />
         ))
       )}

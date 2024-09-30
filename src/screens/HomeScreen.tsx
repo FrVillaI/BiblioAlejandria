@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet } from 'react-native';
 import { Avatar, Button, Divider, FAB, IconButton, Modal, Portal, Text, TextInput } from 'react-native-paper';
-import { auth } from '../config/firebaseConfig'; 
-import { signOut, updateProfile } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
+import { signOut, updateProfile, updateEmail } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
-import { LibroCard } from './components/LibrosCards'; 
-import { NuevoLibro } from './components/NuevoLibro'; 
-import { ref, onValue, update } from 'firebase/database';
-import { dbRealTime } from '../config/firebaseConfig'; 
+import { LibroCard } from './components/LibrosCards';
+import { NuevoLibro } from './components/NuevoLibro';
+import { ref, onValue, update, remove } from 'firebase/database';
+import { dbRealTime } from '../config/firebaseConfig';
 
 interface FormUser {
   name: string;
   firstName: string;
   lastName: string;
   age: string;
+  email: string; 
 }
 
 interface Book {
@@ -28,7 +29,13 @@ interface Book {
 export const HomeScreen = () => {
   const navigation = useNavigation();
   
-  const [formUser, setFormUser] = useState<FormUser>({ name: "", firstName: "", lastName: "", age: "" });
+  const [formUser, setFormUser] = useState<FormUser>({
+    name: '',
+    firstName: '',
+    lastName: '',
+    age: '',
+    email: '',
+  });
   const [userData, setUserData] = useState<any>(null); 
   const [books, setBooks] = useState<Book[]>([]);
   const [showModalProfile, setShowModalProfile] = useState<boolean>(false);
@@ -42,6 +49,7 @@ export const HomeScreen = () => {
       firstName: '', 
       lastName: '',
       age: '', 
+      email: currentUser?.email ?? '', 
     });
 
     const userRef = ref(dbRealTime, `users/${currentUser?.uid}`);
@@ -53,6 +61,7 @@ export const HomeScreen = () => {
           firstName: data.firstName,
           lastName: data.lastName,
           age: data.age,
+          email: currentUser?.email ?? '', 
         });
       }
     });
@@ -78,16 +87,24 @@ export const HomeScreen = () => {
     try {
       const currentUser = auth.currentUser;
 
-      await updateProfile(currentUser!, { displayName: formUser.name });
+      if (currentUser) {
+        // Actualizar el nombre de perfil
+        await updateProfile(currentUser, { displayName: formUser.name });
 
-      const userRef = ref(dbRealTime, `users/${currentUser?.uid}`);
-      await update(userRef, {
-        firstName: formUser.firstName,
-        lastName: formUser.lastName,
-        age: formUser.age,
-      });
+        // Actualizar el correo electrónico
+        if (formUser.email !== currentUser.email) {
+          await updateEmail(currentUser, formUser.email);
+        }
 
-      setShowModalProfile(false);
+        const userRef = ref(dbRealTime, `users/${currentUser.uid}`);
+        await update(userRef, {
+          firstName: formUser.firstName,
+          lastName: formUser.lastName,
+          age: formUser.age,
+        });
+
+        setShowModalProfile(false);
+      }
     } catch (e) {
       console.log(e);
     }
@@ -99,6 +116,17 @@ export const HomeScreen = () => {
     } catch (error) {
       console.error("Error al cerrar sesión: ", error);
     }
+  };
+
+  const handleDeleteBook = (bookId: string) => {
+    const bookRef = ref(dbRealTime, `books/${bookId}`);
+    remove(bookRef)
+      .then(() => {
+        console.log("Libro eliminado correctamente");
+      })
+      .catch((error) => {
+        console.error("Error al eliminar el libro:", error);
+      });
   };
 
   return (
@@ -132,6 +160,8 @@ export const HomeScreen = () => {
               publicationDate={item.publicationDate}
               publisher={item.publisher}
               genre={item.genre}
+              onEdit={() => navigation.navigate('EditarLibro', { bookId: item.id })} 
+              onDelete={() => handleDeleteBook(item.id)} 
             />
           )}
           keyExtractor={item => item.id}
@@ -187,8 +217,8 @@ export const HomeScreen = () => {
           <TextInput
             mode='outlined'
             label="Correo"
-            disabled
-            value={userData?.email!}
+            value={formUser.email}
+            onChangeText={(value) => handleSetValue('email', value)} 
             style={styles.input}
           />
           <Button 
